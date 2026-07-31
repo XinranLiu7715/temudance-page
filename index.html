@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+
+  <title>TeMuDance: Contrastive Alignment-Based Textual Control for Music-Driven Dance Generation</title>
+  <meta name="title" content="TeMuDance: Contrastive Alignment-Based Textual Control for Music-Driven Dance Generation">
+  <meta name="description" content="TeMuDance enables joint music-text conditioned 3D dance generation with rhythmic alignment and semantic controllability.">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="keywords" content="music-to-motion, dance generation, diffusion, controllable generation, text-guided motion, SMPL-X">
+
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="TeMuDance: Contrastive Alignment-Based Textual Control for Music-Driven Dance Generation">
+  <meta property="og:description" content="Joint music-text conditioned 3D dance generation with rhythmic alignment and semantic control.">
+  <meta property="og:url" content="YOUR_PROJECT_PAGE_URL">
+  <meta property="og:image" content="static/images/og_banner.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="TeMuDance">
+  <meta name="twitter:description" content="Joint music-text conditioned 3D dance generation with rhythmic alignment and semantic control.">
+  <meta name="twitter:image" content="static/images/og_banner.png">
+
+  <link rel="icon" type="image/x-icon" href="static/images/favicon.ico">
+
+  <link href="https://fonts.googleapis.com/css?family=Google+Sans|Noto+Sans|Castoro" rel="stylesheet">
+
+  <link rel="stylesheet" href="static/css/bulma.min.css">
+  <link rel="stylesheet" href="static/css/bulma-carousel.min.css">
+  <link rel="stylesheet" href="static/css/bulma-slider.min.css">
+  <link rel="stylesheet" href="static/css/fontawesome.all.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
+
+  <link rel="stylesheet" href="static/css/index.css">
+
+  <style>
+    /* ---- Background Utilities (Strict Alternating) ---- */
+    .bg-white { 
+      background-color: #ffffff !important; 
+    }
+    .bg-light { 
+      background-color: #f7f7f7 !important; 
+      border-top: 1px solid rgba(0,0,0,0.05); 
+      border-bottom: 1px solid rgba(0,0,0,0.05); 
+    }
+
+    /* ---- Global layout tweaks ---- */
+    .section-title { margin-bottom: 1rem; }
+    .section-subtitle { margin-top: 1rem; }
+    .container.is-max-desktop.wide-1280 { max-width: 1280px; }
+
+    /* ---- Teaser image ---- */
+    .temudance-figure img{
+      border-radius: 8px;
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+
+    /* ---- Abstract text ---- */
+    .abstract-text {
+      text-align: justify;
+      line-height: 1.7;
+    }
+
+    /* ---- Section intro text (shared) ---- */
+    .section-intro{
+      max-width: 900px;
+      margin: 0 auto 1.5rem;
+      text-align: center;
+      color: #4a4a4a;
+      line-height: 1.65;
+    }
+
+    /* ---- Subsection (children inside a parent section) ---- */
+    .subsection{
+      margin-top: 3rem;
+      padding-top: 2.25rem;
+      border-top: 1px solid rgba(0,0,0,0.09);
+    }
+    .subsection:first-of-type{
+      margin-top: 2.5rem;
+    }
+    .subsection-eyebrow{
+      display: block;
+      text-align: center;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: #999;
+      margin-bottom: 0.4rem;
+    }
+    .subsection-title{
+      text-align: center;
+      margin-bottom: 1rem !important;
+    }
+    .subsection-intro{
+      max-width: 850px;
+      margin: 0 auto 1.5rem;
+      text-align: center;
+      color: #555;
+      line-height: 1.65;
+    }
+
+    /* ---- Pipeline figure ---- */
+    .pipeline-figure img{
+      border-radius: 8px;
+      display: block;
+      width: 100%;
+      height: auto;
+      margin: 0 auto;
+    }
+    .pipeline-placeholder{
+      border-radius: 8px;
+      background: #f1f1f1;
+      color: #888;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      aspect-ratio: 16 / 7;
+      font-family: monospace;
+      font-size: 13px;
+      letter-spacing: 0.05em;
+    }
+
+    /* ---- Video cards (rounded + overflow hidden) ---- */
+    .video-card{
+      border-radius: 8px;
+      overflow: hidden;
+      background: #ffffff; /* Changed from #000 to white for transparent GIFs */
+      box-shadow: 0 4px 10px rgba(0,0,0,0.06); /* Added slight shadow for better card appearance */
+      margin: 0;
+    }
+
+    .demo-video{
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      display: block;
+      object-fit: cover;
+      background: #ffffff; /* Changed from #000 to white */
+    }
+
+    .video-caption{
+      text-align: center;
+      margin-top: 8px;
+      padding: 0 6px;
+      line-height: 1.35;
+    }
+
+    /* ---- Mode label above each demo (used in Generation Modes overview) ---- */
+    .mode-label{
+      text-align: center;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: #363636;
+    }
+    .mode-desc{
+      text-align: center;
+      color: #6b6b6b;
+      font-size: 0.95rem;
+      margin-top: 6px;
+    }
+
+    /* ---- Genre comparison set (same music, different genre text) ---- */
+    .genre-set{
+      margin-bottom: 2.25rem;
+    }
+    .genre-set:last-child{
+      margin-bottom: 0;
+    }
+    .genre-set-header{
+      display: flex;
+      align-items: baseline;
+      gap: 12px;
+      margin-bottom: 0.9rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid rgba(0,0,0,0.08);
+    }
+    .genre-set-tag{
+      display: inline-block;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #fff;
+      background: #363636;
+      padding: 3px 9px;
+      border-radius: 4px;
+    }
+    .genre-set-title{
+      font-weight: 600;
+      color: #363636;
+      font-size: 1.05rem;
+    }
+    .genre-text-caption{
+      text-align: center;
+      margin-top: 8px;
+      line-height: 1.35;
+    }
+
+    /* ---- Conclusion (left-aligned, justified, expanded) ---- */
+    .conclusion-text{
+      max-width: 900px;
+      margin: 0 auto;
+      text-align: justify;
+      color: #333;
+      font-size: 0.95rem;
+      line-height: 1.7;
+    }
+  </style>
+
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script src="https://documentcloud.adobe.com/view-sdk/main.js"></script>
+  <script defer src="static/js/fontawesome.all.min.js"></script>
+  <script src="static/js/bulma-carousel.min.js"></script>
+  <script src="static/js/bulma-slider.min.js"></script>
+  <script src="static/js/index.js"></script>
+</head>
+
+<body>
+
+  <section class="hero is-white">
+    <div class="hero-body">
+      <div class="container is-max-desktop">
+        <div class="columns is-centered">
+          <div class="column has-text-centered">
+
+            <h1 class="title is-1 publication-title">
+              TeMuDance: Contrastive Alignment-Based Textual Control for Music-Driven Dance Generation
+            </h1>
+
+            <div class="is-size-5 publication-authors">
+              <span>Anonymous Authors</span>
+            </div>
+
+            <div class="publication-links mt-4">
+
+              <span class="link-block">
+                <a href="https://anonymous.4open.science/r/TeMuDance" target="_blank"
+                   class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon">
+                    <i class="fab fa-github"></i>
+                  </span>
+                  <span>Code</span>
+                </a>
+              </span>
+
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section bg-white" id="teaser">
+    <div class="container is-max-desktop">
+      <div class="content" style="max-width: 800px; margin: 0 auto;">
+
+        <figure class="image temudance-figure">
+          <img src="static/images/top_h.png" alt="TeMuDance overview" loading="lazy">
+        </figure>
+
+        <p class="subtitle has-text-centered mt-4">
+          Our model jointly conditions dances on music and text, producing sequences that are both rhythmically aligned and semantically controllable.
+        </p>
+
+      </div>
+    </div>
+  </section>
+
+  <section class="section bg-light" id="abstract">
+    <div class="container is-max-desktop">
+      <h2 class="title is-3 section-title has-text-centered">Abstract</h2>
+      <div class="content">
+        <p class="abstract-text">
+          Existing music-driven dance generation approaches have achieved strong realism and effective
+          audio-motion alignment. However, they generally lack semantic controllability, making it difficult
+          to guide specific movements through natural language descriptions. This limitation primarily stems
+          from the absence of large-scale datasets that jointly align music, text, and motion for supervised
+          learning of text-conditioned control. To address this challenge, we propose
+          <strong>TeMuDance</strong>, a framework that enables text-based control for music-conditioned
+          dance generation without requiring any manually annotated music&ndash;text&ndash;motion triplet
+          dataset. TeMuDance introduces a <strong>motion-centred bridging paradigm</strong> that leverages
+          motion as a shared semantic anchor to align disjoint music&ndash;dance and text&ndash;motion
+          datasets within a unified embedding space, enabling cross-modal retrieval of missing modalities
+          for end-to-end training. A lightweight text control branch is then trained on top of a frozen
+          music-to-dance diffusion backbone, preserving rhythmic fidelity while enabling fine-grained
+          semantic guidance. To further suppress noise inherent in the retrieved supervision, we design
+          a dual-stream fine-tuning strategy with confidence-based filtering. We also propose a novel
+          task-aligned metric that quantifies whether textual prompts induce the intended kinematic
+          attributes under music conditioning.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section bg-white" id="pipeline">
+    <div class="container is-max-desktop wide-1280">
+      <h2 class="title is-3 section-title has-text-centered">Method</h2>
+
+      <p class="section-intro">
+        We pretrain a music-conditioned diffusion backbone, then bridge disjoint music&ndash;dance and
+        text&ndash;motion datasets through a shared motion-centred embedding space to retrieve missing
+        modalities on the fly. A lightweight text control branch is fine-tuned on top of the frozen
+        backbone, enabling semantic steering without sacrificing rhythmic fidelity.
+      </p>
+
+      <figure class="image pipeline-figure">
+        <img src="Figure/Picture1.png"
+             alt="TeMuDance pipeline"
+             loading="lazy"
+             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+        <div class="pipeline-placeholder" style="display:none;">
+          [ pipeline figure — place at static/images/pipeline.png ]
+        </div>
+      </figure>
+    </div>
+  </section>
+
+  <section class="section bg-light" id="generation-modes">
+    <div class="container is-max-desktop wide-1280">
+      <h2 class="title is-3 section-title has-text-centered">Generation Modes</h2>
+
+      <p class="section-intro">
+        Adjusting the guidance scale at inference yields a continuum of behaviours, ranging from text-only generation, to music-only generation, and to joint text-music generation. 
+        <br><br>
+      </p>
+
+      <div class="columns is-multiline is-variable is-4 mt-4">
+
+        <div class="column is-one-third-desktop is-full-mobile">
+          <div class="mode-label">Text-Only Generation</div>
+          <figure class="video-card">
+            <img class="demo-video" src="static/dance/012_slice24_text.gif" alt="Text-Only Generation">
+          </figure>
+          <p class="mode-desc">
+            <b>Prompt: "Walk around"</b><br>
+            Generation under a null music condition.
+          </p>
+        </div>
+
+        <div class="column is-one-third-desktop is-full-mobile">
+          <div class="mode-label">Music-Only Generation</div>
+          <figure class="video-card">
+            <img class="demo-video" src="static/dance/098_slice25.gif" alt="Music-Only Generation">
+          </figure>
+          <p class="mode-desc">
+            <br>
+            Generation without text residual injection.
+          </p>
+        </div>
+
+        <div class="column is-one-third-desktop is-full-mobile">
+          <div class="mode-label">Joint Generation</div>
+          <figure class="video-card">
+            <img class="demo-video" src="static/dance/063_slice12_joint.gif" alt="Joint Generation">
+          </figure>
+          <p class="mode-desc">
+            <b>Prompt: "Walk around"</b><br>
+            Both conditioning pathways are active.
+          </p>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <section class="section bg-white" id="music-text-generation">
+    <div class="container is-max-desktop wide-1280">
+
+      <h2 class="title is-3 section-title has-text-centered">Fine-Grained Semantic Control under Musical Guidance</h2>
+      <p class="section-intro">
+        Unlike previous methods restricted to coarse genre labels, TeMuDance introduces precise, fine-grained semantic steering into music-driven dance. Our framework uses a composite instruction strategy to align global stylistic cues with explicit local actions.
+      </p>
+
+      <div class="subsection" id="action-control">
+        <span class="subsection-eyebrow">Part 01 · Fine-Grained Action Control</span>
+        <h3 class="title is-4 subsection-title">Action-Level Control</h3>
+        <p class="subsection-intro">
+          Precisely specify concrete movements &mdash; from spatial trajectories like <em>&ldquo;walks clockwise in a circle&rdquo;</em> to explicit poses like <em>&ldquo;kicking with his left leg&rdquo;</em> &mdash; and seamlessly integrate them into the choreographic flow.
+        </p>
+
+        <div class="columns is-multiline is-variable is-4">
+
+          <div class="column is-one-third-desktop is-half-tablet is-full-mobile">
+            <figure class="video-card">
+              <video class="demo-video" controls muted autoplay loop playsinline preload="metadata">
+                <source src="static/videos/test_12_211_slice32.mp4" type="video/mp4">
+              </video>
+            </figure>
+            <figcaption class="video-caption">K-pop Music + “A man walks clockwise in a circle.”</figcaption>
+          </div>
+
+          <div class="column is-one-third-desktop is-half-tablet is-full-mobile">
+            <figure class="video-card">
+              <video class="demo-video" controls muted autoplay loop playsinline preload="metadata">
+                <source src="static/videos/test_0_063_slice10_kick.mp4" type="video/mp4">
+              </video>
+            </figure>
+            <figcaption class="video-caption">Breaking Music + “A person is kicking with his left leg.”</figcaption>
+          </div>
+
+          <div class="column is-one-third-desktop is-half-tablet is-full-mobile">
+            <figure class="video-card">
+              <video class="demo-video" controls muted autoplay loop playsinline preload="metadata">
+                <source src="static/videos/test_0_109_slice25_sways.mp4" type="video/mp4">
+              </video>
+            </figure>
+            <figcaption class="video-caption">Classical Music + “A person sways left and right.”</figcaption>
+          </div>
+
+          <div class="column is-one-third-desktop is-half-tablet is-full-mobile">
+            <figure class="video-card">
+              <video class="demo-video" controls muted autoplay loop playsinline preload="metadata">
+                <source src="static/videos/test_0_211_slice20_jump.mp4" type="video/mp4">
+              </video>
+            </figure>
+            <figcaption class="video-caption">K-pop Music + “A person is jumping.”</figcaption>
+          </div>
+
+          <div class="column is-one-third-desktop is-half-tablet is-full-mobile">
+            <figure class="video-card">
+              <video class="demo-video" controls muted autoplay loop playsinline preload="metadata">
+                <source src="static/videos/test_1_012_slice22_spin.mp4" type="video/mp4">
+              </video>
+            </figure>
+            <figcaption class="video-caption">Jazz Music + “A man is spinning.”</figcaption>
+          </div>
+
+          <div class="column is-one-third-desktop is-half-tablet is-full-mobile">
+            <figure class="video-card">
+              <video class="demo-video" controls muted autoplay loop playsinline preload="metadata">
+                <source src="static/videos/test_1_092_slice11right.mp4" type="video/mp4">
+              </video>
+            </figure>
+            <figcaption class="video-caption">Popping Music + “A person is dancing towards the right side.”</figcaption>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="subsection" id="genre-control">
+        <span class="subsection-eyebrow">Part 02 · Global Stylistic Guidance</span>
+        <h3 class="title is-4 subsection-title">Genre-Level Control</h3>
+        <p class="subsection-intro">
+          Steer the overall dance genre through text. To isolate genre-level steering, each set below <strong>fixes the input music and varies only the genre prompt</strong>, allowing the model to adapt the same music track into entirely different choreographic styles based on language prompts.
+        </p>
+
+        <div class="genre-set">
+          <div class="genre-set-header">
+            <span class="genre-set-tag">Music A</span>
+            <span class="genre-set-title">Same music clip, three genre prompts</span>
+          </div>
+
+          <div class="columns is-multiline is-variable is-4">
+
+            <div class="column is-one-third-desktop is-half-tablet is-full-mobile">
+              <figure class="video-card">
+                <video class="demo-video" controls muted autoplay loop playsinline preload="metadata">
+                  <source src="static/dance/test_1_012_slice22_Locking.mp4" type="video/mp4">
+                </video>
+              </figure>
+              <p class="genre-text-caption">
+                “This is a Locking-style dance.”
+              </p>
+            </div>
+
+            <div class="column is-one-third-desktop is-half-tablet is-full-mobile">
+              <figure class="video-card">
+                <video class="demo-video" controls muted autoplay loop playsinline preload="metadata">
+                  <source src="static/dance/test_1_012_slice22HanTang.mp4" type="video/mp4">
+                </video>
+              </figure>
+              <p class="genre-text-caption">
+                “This is a HanTang-style dance.”
+              </p>
+            </div>
+
+            <div class="column is-one-third-desktop is-half-tablet is-full-mobile">
+              <figure class="video-card">
+                <video class="demo-video" controls muted autoplay loop playsinline preload="metadata">
+                  <source src="static/dance/test_1_012_slice22_hiphop.mp4" type="video/mp4">
+                </video>
+              </figure>
+              <p class="genre-text-caption">
+                “This is a Hiphop-style dance.”
+              </p>
+            </div>
+
+          </div>
+        </div>
+
+        <div class="genre-set">
+          <div class="genre-set-header">
+            <span class="genre-set-tag">Music B</span>
+            <span class="genre-set-title">A different music clip, same setup</span>
+          </div>
+
+          <div class="columns is-multiline is-variable is-4">
+
+            <div class="column is-one-third-desktop is-half-tablet is-full-mobile">
+              <figure class="video-card">
+                <video class="demo-video" controls muted autoplay loop playsinline preload="metadata">
+                  <source src="static/dance/test_9_132_slice19_Choreography.mp4" type="video/mp4">
+                </video>
+              </figure>
+              <p class="genre-text-caption">
+                “This is a Choreography-style dance.”
+              </p>
+            </div>
+
+            <div class="column is-one-third-desktop is-half-tablet is-full-mobile">
+              <figure class="video-card">
+                <video class="demo-video" controls muted autoplay loop playsinline preload="metadata">
+                  <source src="static/dance/test_9_132_slice19_classic.mp4" type="video/mp4">
+                </video>
+              </figure>
+              <p class="genre-text-caption">
+                “This is a Classic-style dance.”
+              </p>
+            </div>
+
+            <div class="column is-one-third-desktop is-half-tablet is-full-mobile">
+              <figure class="video-card">
+                <video class="demo-video" controls muted autoplay loop playsinline preload="metadata">
+                  <source src="static/dance/test_9_132_slice19_locking.mp4" type="video/mp4">
+                </video>
+              </figure>
+              <p class="genre-text-caption">
+                “This is an Locking-style dance.”
+              </p>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <section class="section bg-light" id="music-only">
+    <div class="container is-max-desktop wide-1280">
+      <h2 class="title is-3 section-title has-text-centered">Music-Only Generation</h2>
+
+      <p class="section-intro">
+        With textual conditioning turned off, the frozen backbone alone produces coherent, beat-aligned
+        choreography across six genres &mdash; Classical, Breaking, Dai, Popping, Jazz, and Urban.
+      </p>
+
+      <div class="columns is-multiline is-variable is-4">
+
+        <div class="column is-one-third-desktop is-half-tablet is-full-mobile">
+          <figure class="video-card">
+            <video class="demo-video" controls muted autoplay loop playsinline preload="metadata">
+              <source src="static/dance/test_0_109_slice25.mp4" type="video/mp4">
+            </video>
+          </figure>
+          <figcaption class="video-caption">Classical-Style Dance</figcaption>
+        </div>
+
+        <div class="column is-one-third-desktop is-half-tablet is-full-mobile">
+          <figure class="video-card">
+            <video class="demo-video" controls muted autoplay loop playsinline preload="metadata">
+              <source src="static/dance/test_1_063_slice11.mp4" type="video/mp4">
+            </video>
+          </figure>
+          <figcaption class="video-caption">Breaking-Style Dance</figcaption>
+        </div>
+
+        <div class="column is-one-third-desktop is-half-tablet is-full-mobile">
+          <figure class="video-card">
+            <video class="demo-video" controls muted autoplay loop playsinline preload="metadata">
+              <source src="static/dance/test_1_092_slice11.mp4" type="video/mp4">
+            </video>
+          </figure>
+          <figcaption class="video-caption">Locking-Style Dance</figcaption>
+        </div>
+
+        <div class="column is-one-third-desktop is-half-tablet is-full-mobile">
+          <figure class="video-card">
+            <video class="demo-video" controls muted autoplay loop playsinline preload="metadata">
+              <source src="static/dance/test_1_211_slice21.mp4" type="video/mp4">
+            </video>
+          </figure>
+          <figcaption class="video-caption">Popping-Style Dance</figcaption>
+        </div>
+
+        <div class="column is-one-third-desktop is-half-tablet is-full-mobile">
+          <figure class="video-card">
+            <video class="demo-video" controls muted autoplay loop playsinline preload="metadata">
+              <source src="static/dance/test_6_012_slice27.mp4" type="video/mp4">
+            </video>
+          </figure>
+          <figcaption class="video-caption">Jazz-Style Dance</figcaption>
+        </div>
+
+        <div class="column is-one-third-desktop is-half-tablet is-full-mobile">
+          <figure class="video-card">
+            <video class="demo-video" controls muted autoplay loop playsinline preload="metadata">
+              <source src="static/dance/test_14_204_slice16.mp4" type="video/mp4">
+            </video>
+          </figure>
+          <figcaption class="video-caption">Urban-Style Dance</figcaption>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <section class="section bg-white" id="conclusion">
+    <div class="container is-max-desktop">
+      <h2 class="title is-3 section-title has-text-centered">Conclusion</h2>
+      <p class="conclusion-text">
+        TeMuDance brings fine-grained textual control to music-driven 3D dance generation
+        <em>without</em> requiring paired music&ndash;text&ndash;motion triplets. By bridging disjoint datasets
+        through motion-centred contrastive alignment and attaching a lightweight control branch
+        to a frozen backbone, our framework enables precise action execution and global stylistic steering while preserving high rhythmic fidelity.
+      </p>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="columns is-centered">
+        <div class="column is-8">
+          <div class="content" style="text-align: justify;">
+            <p>
+              This page was built using the Academic Project Page Template and adopted from the Nerfies project page.
+              You are free to borrow the source code of this website; please link back to the original template in the footer.
+              <br>
+              Licensed under a Creative Commons Attribution-ShareAlike 4.0 International License.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>
